@@ -45,7 +45,6 @@ require.config({
 		'monster-webphone': 'js/lib/monster.webphone',
 		'mousetrap': 'js/vendor/mousetrap-1.5.3.min',
 		'nicescroll': 'js/vendor/jquery.nicescroll.min',
-		'plugins': 'js/plugins',
 		'papaparse': 'js/vendor/papaparse-4.1.2.min',
 		'postal': 'js/vendor/postal-2.0.4',
 		'popup-redirect': 'js/vendor/popup-redirect',
@@ -79,7 +78,6 @@ require.config({
 		'crossroads': ['signals'],
 		'hasher': ['signals'],
 		'slider': ['dependClass'],
-		'plugins': ['jquery'],
 		'kazoosdk': ['jquery'],
 		'touch-punch': ['jqueryui'],
 		'footable': {
@@ -95,7 +93,7 @@ require.config({
 	urlArgs: 'bust=' + (new Date()).getTime()
 });
 
-require(['jquery', 'monster', 'modernizr', 'plugins', 'bootstrap', 'bootstrap-clickover', 'touch-punch'], function($, monster) {
+require(['jquery', 'monster', 'modernizr', 'bootstrap', 'bootstrap-clickover', 'touch-punch'], function($, monster) {
 	$.support.cors = true;
 
 	monster.initSDK();

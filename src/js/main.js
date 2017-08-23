@@ -9,6 +9,7 @@ require.config({
 		'card': 'js/vendor/card',
 		'chosen': 'js/vendor/jquery.chosen.min',
 		'clipboard': 'js/vendor/clipboard.min',
+		'cookies': 'js/vendor/js.cookie',
 		'crossroads': 'js/vendor/crossroads.min',
 		'config': 'js/config',
 		'dependClass': 'js/vendor/jquery.dependClass',

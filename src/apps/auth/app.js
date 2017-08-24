@@ -80,7 +80,7 @@ define(function(require) {
 				}, options);
 			} else if (monster.config.whitelabel.hasOwnProperty('sso')) {
 				var sso = monster.config.whitelabel.sso,
-					token = $.cookie(sso.cookie.name);
+					token = monster.cookies.get(sso.cookie.name);
 
 				monster.config.whitelabel.logoutTimer = 0;
 
@@ -89,7 +89,7 @@ define(function(require) {
 						if (data.httpErrorStatus === 403) {
 							window.location = sso.no_account;
 						} else {
-							$.cookie(sso.cookie.name, null);
+							monster.cookies.remove(sso.cookie.name);
 							window.location = sso.login;
 						}
 					});
@@ -98,9 +98,9 @@ define(function(require) {
 				}
 			} else if (urlParams.hasOwnProperty('recovery')) {
 				self.checkRecoveryId(urlParams.recovery, successfulAuth);
-			} else if ($.cookie('monster-auth')) {
+			} else if (monster.cookies.get('monster-auth')) {
 				// otherwise, we handle it ourself, and we check if the authentication cookie exists, try to log in with its information
-				var cookieData = $.parseJSON($.cookie('monster-auth'));
+				var cookieData = monster.cookies.getJson('monster-auth');
 
 				self.authenticateAuthToken(cookieData.authToken, function(data) {
 					data.loginData = {
@@ -148,12 +148,14 @@ define(function(require) {
 		buildCookiesFromSSOResponse: function(authData) {
 			var decoded = monster.util.jwt_decode(authData.auth_token);
 
-			$.cookie('monster-sso-auth', JSON.stringify(decoded));
+			monster.cookies.set('monster-sso-auth', decoded);
 
 			if (decoded.hasOwnProperty('account_id')) {
-				$.cookie('monster-auth', JSON.stringify({ authToken: authData.auth_token }));
+				monster.cookies.set('monster-auth', {
+					authToken: authData.auth_token
+				});
 			} else {
-				$.cookie('monster-auth', null);
+				monster.cookies.remove('monster-auth');
 			}
 
 			return decoded;
@@ -199,14 +201,14 @@ define(function(require) {
 
 		updateTokenFromWhitelabelCookie: function() {
 			var self = this,
-				tokenCookie = monster.config.whitelabel.sso.hasOwnProperty('cookie') && monster.config.whitelabel.sso.cookie.name ? $.cookie(monster.config.whitelabel.sso.cookie.name) : undefined;
+				tokenCookie = monster.config.whitelabel.sso.hasOwnProperty('cookie') && monster.config.whitelabel.sso.cookie.name ? monster.cookies.get(monster.config.whitelabel.sso.cookie.name) : undefined;
 
 			self.setKazooAPIToken(tokenCookie);
 		},
 
 		updateTokenFromMonsterCookie: function() {
 			var self = this,
-				cookieMonster = $.cookie('monster-auth'),
+				cookieMonster = monster.cookies.get('monster-auth'),
 				tokenCookie = cookieMonster ? $.parseJSON(cookieMonster).authToken : undefined;
 
 			self.setKazooAPIToken(tokenCookie);
@@ -272,7 +274,7 @@ define(function(require) {
 				cookieAuth.accountName = data.loginData.account_name;
 			}
 
-			$.cookie('monster-auth', JSON.stringify(cookieAuth));
+			monster.cookies.set('monster-auth', cookieAuth);
 
 			// In the case of the retry login, we don't want to re-update the UI, we just want to re-update the flags set above, that's why we added this parameter.
 			if (updateLayout) {
@@ -588,11 +590,11 @@ define(function(require) {
 
 		renderSSOProviderTemplate: function(container) {
 			var self = this,
-				ssoUser = $.parseJSON($.cookie('monster-sso-auth')) || {},
+				ssoUser = monster.cookies.getJson('monster-sso-auth'),
 				dataTemplate = {
 					ssoProviders: monster.config.whitelabel.sso_providers || [],
 					ssoUser: ssoUser,
-					isUnknownKazooUser: ssoUser.hasOwnProperty('auth_app_id') && !ssoUser.hasOwnProperty('account_id')
+					isUnknownKazooUser: ssoUser ? ssoUser.hasOwnProperty('auth_app_id') && !ssoUser.hasOwnProperty('account_id') : false
 				},
 				template = $(monster.template(self, 'sso-providers', dataTemplate));
 
@@ -648,12 +650,12 @@ define(function(require) {
 				container = self.appFlags.mainContainer,
 				accountName = '',
 				realm = '',
-				cookieLogin = $.parseJSON($.cookie('monster-login')) || {},
+				cookieLogin = monster.cookies.getJson('monster-login'),
 				templateData = {
-					username: cookieLogin.login || '',
+					username: cookieLogin ? cookieLogin.login : '',
 					requestAccountName: (realm || accountName) ? false : true,
-					accountName: cookieLogin.accountName || '',
-					rememberMe: cookieLogin.login || cookieLogin.accountName ? true : false,
+					accountName: cookieLogin ? cookieLogin.accountName : '',
+					rememberMe: cookieLogin ? cookieLogin.hasOwnProperty('login') || cookieLogin.hasOwnProperty('accountName') : false,
 					showRegister: monster.config.hide_registration || false,
 					hidePasswordRecovery: monster.config.whitelabel.hidePasswordRecovery || false
 				},
@@ -967,9 +969,11 @@ define(function(require) {
 							accountName: loginAccountName
 						};
 
-						$.cookie('monster-login', JSON.stringify(cookieLogin), {expires: 30});
+						monster.cookies.set('monster-login', cookieLogin, {
+							expires: 30
+						});
 					} else {
-						$.cookie('monster-login', null);
+						monster.cookies.remove('monster-login');
 					}
 				},
 				function() {
@@ -1127,13 +1131,13 @@ define(function(require) {
 				resource: 'auth.userAuth',
 				data: dataPayload,
 				success: function(data, status) {
-					var ssoUser = $.parseJSON($.cookie('monster-sso-auth')) || {};
+					var ssoUser = monster.cookies.getJson('monster-sso-auth');
 
 					data.loginData = loginData;
 
 					self._afterSuccessfulAuth(data, pUpdateLayout);
 
-					if (ssoUser.hasOwnProperty('auth_id')) {
+					if (ssoUser && ssoUser.hasOwnProperty('auth_id')) {
 						self.linkUserSSO(ssoUser.auth_id, function() {
 							callback && callback(data);
 						});
@@ -1207,8 +1211,8 @@ define(function(require) {
 			var self = this,
 				loginData;
 
-			if ($.cookie('monster-auth')) {
-				var cookieData = $.parseJSON($.cookie('monster-auth'));
+			if (monster.cookies.get('monster-auth')) {
+				var cookieData = monster.cookies.getJson('monster-auth');
 
 				if (cookieData.hasOwnProperty('credentials') && cookieData.hasOwnProperty('accountName')) {
 					loginData = {

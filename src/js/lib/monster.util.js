@@ -570,7 +570,7 @@ define(function(require) {
 		*/
 		setDefaultLanguage: function() {
 			var browserLanguage = (navigator.language).replace(/-.*/, function(a) { return a.toUpperCase(); }), // always capitalize the second part of the navigator language
-				cookieLanguage = $.cookie('monster-auth') ? ($.parseJSON($.cookie('monster-auth'))).language : undefined,
+				cookieLanguage = monster.cookies.get('monster-auth') ? monster.cookies.getJson('monster-auth').language : undefined,
 				defaultLanguage = browserLanguage || 'en-US';
 
 			monster.config.whitelabel.language = cookieLanguage || monster.config.whitelabel.language || defaultLanguage;
@@ -780,8 +780,8 @@ define(function(require) {
 		},
 
 		resetAuthCookies: function() {
-			$.cookie('monster-auth', null);
-			$.cookie('monster-sso-auth', null);
+			monster.cookies.remove('monster-auth');
+			monster.cookies.remove('monster-sso-auth');
 		},
 
 		logoutAndReload: function() {
@@ -792,7 +792,7 @@ define(function(require) {
 			if (monster.config.whitelabel.hasOwnProperty('sso')) {
 				var sso = monster.config.whitelabel.sso;
 				/* this didn't work
-					$.cookie(sso.cookie.name, null, {domain : sso.cookie.domain ,path:'/'});
+					monster.cookies.remove(sso.cookie.name, { domain: sso.cookie.domain , path:'/' });
 				*/
 
 				window.location = sso.logout;

@@ -5,6 +5,7 @@ define(function(require) {
 		card = require('card'),
 		chosen = require('chosen'),
 		config = require('config'),
+		Cookies = require('cookies'),
 		ddslick = require('ddslick'),
 		fileupload = require('fileupload'),
 		form2object = require('form2object'),
@@ -585,6 +586,21 @@ define(function(require) {
 
 		md5: function(string) {
 			return md5(string);
+		},
+
+		cookies: {
+			get: function(name) {
+				return Cookies.get(name);
+			},
+			getJson: function(name) {
+				return Cookies.getJSON(name);
+			},
+			set: function(name, value, attributes) {
+				Cookies.set(name, value, attributes);
+			},
+			remove: function(name, attributes) {
+				Cookies.remove(name, attributes);
+			}
 		}
 	};
 
